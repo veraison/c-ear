@@ -92,8 +92,6 @@ void usage(const char *name) {
   (void)fprintf(stderr, fmt, name);
 
   exit(EXIT_FAILURE);
-
-  exit(0);
 }
 
 void parse_opts(int ac, char **av, args_t *pargs) {
