@@ -34,7 +34,7 @@ void test_jwt_verify_valid_ear(void) {
       "w3aDM1g678DzO2EkJ7eJ24UwOXhstqNeYM9axs9dLaDYtO0yPjFXpRr1l0"
       "6gRsus1jbxc0PF4pr6g_tnmj5yUQ";
 
-  int ret = ear_jwt_verify(valid_ear, pkey, pkey_sz, &ear, NULL);
+  int ret = ear_jwt_verify(valid_ear, pkey, pkey_sz, "ES256", &ear, NULL);
   TEST_ASSERT(ret == 0);
 
   const char *status = ear_get_status(ear, NULL);

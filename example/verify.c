@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   read_from_file(args.key_fn, &key, &key_sz);
   read_from_file(args.ear_fn, &ear_jwt, &ear_jwt_sz);
 
-  if (ear_jwt_verify(to_cstr(ear_jwt, ear_jwt_sz), key, key_sz, &ear,
+  if (ear_jwt_verify(to_cstr(ear_jwt, ear_jwt_sz), key, key_sz, args.alg, &ear,
                      err_msg) != 0) {
     err(EXIT_FAILURE, "failed to verify EAR: %s", err_msg);
   }

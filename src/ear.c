@@ -23,17 +23,24 @@ void ear_free(ear_t *ear) {
 }
 
 int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
-                   ear_t **pear, char err_msg[EAR_ERR_SZ]) {
+                   const char *alg, ear_t **pear, char err_msg[EAR_ERR_SZ]) {
   int ret = 0;
   jwt_valid_t *jwt_valid = NULL;
   ear_t *ear = NULL;
-  jwt_alg_t opt_alg = JWT_ALG_ES256;
+  jwt_alg_t opt_alg;
   char e[EAR_ERR_SZ] = {'\0'};
 
   assert(ear_jwt != NULL);
   assert(pkey != NULL);
   assert(pkey_sz > 0);
+  assert(alg != NULL);
   assert(pear != NULL);
+
+  opt_alg = jwt_str_alg(alg);
+  if (opt_alg == JWT_ALG_INVAL) {
+    (void)snprintf(e, sizeof e, "unknown JWT algorithm \"%s\"", alg);
+    goto err;
+  }
 
   ret = jwt_valid_new(&jwt_valid, opt_alg);
   if (ret != 0 || jwt_valid == NULL) {

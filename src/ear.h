@@ -29,6 +29,8 @@ typedef struct ear_s ear_t;
  * @param[in]   pkey    The public key for verification.  The format is
  *                      described in Section 13 of RFC7468
  * @param[in]   pkey_sz Size in bytes of @p pkey
+ * @param[in]   alg     NUL-terminated C string with the JWT algorithm to use
+ *                      for verifying the EAR (e.g., "ES256", "RS256")
  * @param[out]  pear    Pointer to a ear_t object which, on success, will be
  *                      populated with the EAR claims-set.  This needs to be
  *                      provided by the caller
@@ -42,7 +44,7 @@ typedef struct ear_s ear_t;
  * @retval  -1  on failure
  */
 int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
-                   ear_t **pear, char err_msg[EAR_ERR_SZ]);
+                   const char *alg, ear_t **pear, char err_msg[EAR_ERR_SZ]);
 
 /**
  * @brief Return the value of the "ear.status" claim
