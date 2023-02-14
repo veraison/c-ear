@@ -1,0 +1,21 @@
+name: build, run tests and do an install
+on: [push, pull_request]
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: dependencies (libjwt and jensson)
+      run: |
+        git clone --depth 1 --branch v1.15.2 https://github.com/benmcollins/libjwt.git
+        cd libjwt
+        env cmake -DUSE_INSTALLED_JANSSON=OFF -DJANSSON_BUILD_DOCS=OFF -Bbuild
+        sudo cmake --build build --target all install
+    - name: configure
+      run: cmake -B_build -DCMAKE_INSTALL_PREFIX=_install
+    - name: build
+      run: cmake --build _build/ --target all
+    - name: test
+      run: cmake --build _build/ --target test
+    - name: mock install
+      run: cmake --build _build/ --target install
