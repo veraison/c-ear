@@ -24,12 +24,12 @@ typedef struct ear_s ear_t;
  * Verify an EAT Attestation Result in JWT format using the supplied public key.
  * On success, the decoded EAR claims-set is returned.
  *
- * @param[in]   ear     NUL-terminated C string with the JWT carrying the EAR
+ * @param[in]   ear_jwt NUL-terminated C string with the JWT carrying the EAR
  *                      claims-set
  * @param[in]   pkey    The public key for verification.  The format is
  *                      described in Section 13 of RFC7468
  * @param[in]   pkey_sz Size in bytes of @p pkey
- * @param[out]  pclaims Pointer to a ear_t object which, on success, will be
+ * @param[out]  pear    Pointer to a ear_t object which, on success, will be
  *                      populated with the EAR claims-set.  This needs to be
  *                      provided by the caller
  * @param[out]  err_msg pointer to a pre-allocated buffer (of at least
@@ -42,7 +42,7 @@ typedef struct ear_s ear_t;
  * @retval  -1  on failure
  */
 int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
-                   ear_t **pclaims, char err_msg[EAR_ERR_SZ]);
+                   ear_t **pear, char err_msg[EAR_ERR_SZ]);
 
 /**
  * @brief Return the value of the "ear.status" claim

@@ -3,6 +3,7 @@
 
 #include "ear.h"
 #include "ear_priv.h"
+#include <assert.h>
 #include <jwt.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,12 +23,17 @@ void ear_free(ear_t *ear) {
 }
 
 int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
-                   ear_t **pclaims, char err_msg[EAR_ERR_SZ]) {
+                   ear_t **pear, char err_msg[EAR_ERR_SZ]) {
   int ret = 0;
   jwt_valid_t *jwt_valid = NULL;
   ear_t *ear = NULL;
   jwt_alg_t opt_alg = JWT_ALG_ES256;
   char e[EAR_ERR_SZ] = {'\0'};
+
+  assert(ear_jwt != NULL);
+  assert(pkey != NULL);
+  assert(pkey_sz > 0);
+  assert(pear != NULL);
 
   ret = jwt_valid_new(&jwt_valid, opt_alg);
   if (ret != 0 || jwt_valid == NULL) {
@@ -70,7 +76,7 @@ int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
     goto err;
   }
 
-  *pclaims = ear;
+  *pear = ear;
 
   return 0;
 
@@ -91,6 +97,9 @@ const char *ear_get_status(ear_t *ear, char err_msg[EAR_ERR_SZ]) {
   char e[EAR_ERR_SZ] = {'\0'};
   const char *tiers[] = {"affirming", "contraindicated", "warning", "none"};
 
+  assert(ear != NULL);
+  assert(ear->jwt != NULL);
+
   const char *status = jwt_get_grant(ear->jwt, "ear.status");
   if (status == NULL) {
     (void)snprintf(e, sizeof e, "\"ear.status\" not found");
@@ -105,8 +114,10 @@ const char *ear_get_status(ear_t *ear, char err_msg[EAR_ERR_SZ]) {
 
   (void)snprintf(err_msg, EAR_ERR_SZ, "unknown status \"%s\"", status);
 
+  // fallthrough
 err:
   if (err_msg != NULL)
     (void)u_strlcpy(err_msg, e, EAR_ERR_SZ);
+
   return NULL;
 }
