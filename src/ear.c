@@ -123,11 +123,11 @@ static int tier_from_string(const char *tier, ear_tier_t *ptier) {
   return -1;
 }
 
-int ear_get_status(ear_t *ear, const char *appraisal, ear_tier_t *ptier,
+int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
                    char err_msg[EAR_ERR_SZ]) {
   assert(ear != NULL);
   assert(ear->jwt != NULL);
-  assert(appraisal != NULL);
+  assert(app_rec != NULL);
   assert(ptier != NULL);
 
   char e[EAR_ERR_SZ] = {'\0'};
@@ -146,9 +146,9 @@ int ear_get_status(ear_t *ear, const char *appraisal, ear_tier_t *ptier,
 
   free(submods_js), submods_js = NULL;
 
-  if ((submod = json_object_get(submods, appraisal)) == NULL) {
+  if ((submod = json_object_get(submods, app_rec)) == NULL) {
     (void)snprintf(e, sizeof e, "no appraisal record found for \"%s\"",
-                   appraisal);
+                   app_rec);
     goto err;
   }
 
