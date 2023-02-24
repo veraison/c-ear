@@ -165,7 +165,7 @@ int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
     goto err;
   }
 
-  json_decref(submods);
+  json_decref(submods), submods = NULL;
 
   return 0;
 
