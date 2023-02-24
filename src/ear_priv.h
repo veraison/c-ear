@@ -4,6 +4,7 @@
 #ifndef EAR_PRIV_H
 #define EAR_PRIV_H
 
+#include <jansson.h>
 #include <jwt.h>
 #include <stddef.h>
 

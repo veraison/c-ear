@@ -18,6 +18,13 @@ extern "C" {
 // forward declaration
 typedef struct ear_s ear_t;
 
+typedef enum {
+  EAR_TIER_NONE,
+  EAR_TIER_AFFIRMING,
+  EAR_TIER_WARNING,
+  EAR_TIER_CONTRAINDICATED
+} ear_tier_t;
+
 /**
  * @brief Verify an EAT Attestation Result in JWT format.
  *
@@ -33,11 +40,11 @@ typedef struct ear_s ear_t;
  *                      for verifying the EAR (e.g., "ES256", "RS256")
  * @param[out]  pear    Pointer to a ear_t object which, on success, will be
  *                      populated with the EAR claims-set.  This needs to be
- *                      provided by the caller
+ *                      allocated by the caller
  * @param[out]  err_msg pointer to a pre-allocated buffer (of at least
  *                      @c EAR_ERR_SZ bytes) which, on failure, will be filled
  *                      in by the callee with a human readable error message.
- *                      This can set to NULL if no extra error reporting is
+ *                      This can be set to NULL if no extra error reporting is
  *                      required
  *
  * @retval  0   on success
@@ -47,23 +54,29 @@ int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
                    const char *alg, ear_t **pear, char err_msg[EAR_ERR_SZ]);
 
 /**
- * @brief Return the value of the "ear.status" claim
+ * @brief Return the "ear.status" value of the specified appraisal record
  *
- * On success, a NUL-terminated C string with the the value of the "ear.status"
- * claim is returned.  On failure a NULL value is returned and, if supplied, the
- * @p err_msg is filled with the failure reason.
+ * On success, the "ear.status" value of the specified appraisal record is
+ * returned as a ear_tier_t codepoint.  On error, if supplied, the @p err_msg
+ * is filled with the failure reason.
  *
  * @param[in]   ear     an ear_t object returned from a successful invocation of
  *                      ear_jwt_verify
+ * @param[in]   app_rec the submod name for the appraisal record
+ * @param[out]  ptier   Pointer to a ear_tier_t object which, on success, is
+ *                      populated with the status codepoint.  This needs to be
+ *                      allocated by the caller
  * @param[out]  err_msg pointer to a pre-allocated buffer (of at least @c
  *                      EAR_ERR_SZ bytes) which, on failure, will be filled in
  *                      by the callee with a human readable error message.  This
- *                      can set to NULL if no extra error reporting is required
+ *                      can be set to NULL if no extra error reporting is
+ *                      required
  *
- * @retval  the status string on success
- * @retval  NULL on failure
+ * @retval  0   on success
+ * @retval  -1  on failure
  */
-const char *ear_get_status(ear_t *ear, char err_msg[EAR_ERR_SZ]);
+int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
+                   char err_msg[EAR_ERR_SZ]);
 
 /**
  * @brief Free an ear_t object allocated by ear_jwt_verify

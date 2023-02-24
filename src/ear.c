@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define EAR_PROFILE_2022 "tag:github.com,2022:veraison/ear"
+#define EAR_PROFILE "tag:github.com,2023:veraison/ear"
 
 static ear_t *ear_new() { return (ear_t *)calloc(1, sizeof(ear_t)); }
 
@@ -71,6 +71,8 @@ int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
     goto err;
   }
 
+  jwt_valid_free(jwt_valid), jwt_valid = NULL;
+
   const char *eat_profile = jwt_get_grant(ear->jwt, "eat_profile");
 
   if (eat_profile == NULL) {
@@ -78,7 +80,7 @@ int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
     goto err;
   }
 
-  if (strcmp(eat_profile, EAR_PROFILE_2022)) {
+  if (strcmp(eat_profile, EAR_PROFILE)) {
     (void)snprintf(e, sizeof e, "unknown eat_profile \"%s\"", eat_profile);
     goto err;
   }
@@ -100,31 +102,82 @@ err:
   return -1;
 }
 
-const char *ear_get_status(ear_t *ear, char err_msg[EAR_ERR_SZ]) {
-  char e[EAR_ERR_SZ] = {'\0'};
-  const char *tiers[] = {"affirming", "contraindicated", "warning", "none"};
+static int tier_from_string(const char *tier, ear_tier_t *ptier) {
+  struct tiers_map {
+    const char *s;
+    ear_tier_t e;
+  } tiers[] = {
+      {"affirming", EAR_TIER_AFFIRMING},
+      {"contraindicated", EAR_TIER_CONTRAINDICATED},
+      {"warning", EAR_TIER_WARNING},
+      {"none", EAR_TIER_NONE},
+  };
 
+  for (unsigned i = 0; i < sizeof tiers / sizeof(struct tiers_map); i++) {
+    if (!strcmp(tier, tiers[i].s)) {
+      *ptier = tiers[i].e;
+      return 0;
+    }
+  }
+
+  return -1;
+}
+
+int ear_get_status(ear_t *ear, const char *appraisal, ear_tier_t *ptier,
+                   char err_msg[EAR_ERR_SZ]) {
   assert(ear != NULL);
   assert(ear->jwt != NULL);
+  assert(appraisal != NULL);
+  assert(ptier != NULL);
 
-  const char *status = jwt_get_grant(ear->jwt, "ear.status");
-  if (status == NULL) {
+  char e[EAR_ERR_SZ] = {'\0'};
+  char *submods_js = NULL;
+  json_t *submods = NULL, *submod = NULL, *status = NULL;
+
+  if ((submods_js = jwt_get_grants_json(ear->jwt, "submods")) == NULL) {
+    (void)snprintf(e, sizeof e, "\"submods\" not found");
+    goto err;
+  }
+
+  if ((submods = json_loads(submods_js, 0, NULL)) == NULL) {
+    (void)snprintf(e, sizeof e, "\"submods\" does not contain valid JSON");
+    goto err;
+  }
+
+  free(submods_js), submods_js = NULL;
+
+  if ((submod = json_object_get(submods, appraisal)) == NULL) {
+    (void)snprintf(e, sizeof e, "no appraisal record found for \"%s\"",
+                   appraisal);
+    goto err;
+  }
+
+  status = json_object_get(submod, "ear.status");
+  if (!json_is_string(status)) {
     (void)snprintf(e, sizeof e, "\"ear.status\" not found");
     goto err;
   }
 
-  for (unsigned i = 0; i < sizeof tiers / sizeof(char *); i++) {
-    if (!strcmp(status, tiers[i])) {
-      return status;
-    }
+  const char *status_s = json_string_value(status);
+
+  if (tier_from_string(status_s, ptier) == -1) {
+    (void)snprintf(err_msg, EAR_ERR_SZ, "unknown status \"%s\"", status_s);
+    goto err;
   }
 
-  (void)snprintf(err_msg, EAR_ERR_SZ, "unknown status \"%s\"", status);
+  json_decref(submods);
 
-  // fallthrough
+  return 0;
+
 err:
+  if (submods_js != NULL)
+    free(submods_js);
+
   if (err_msg != NULL)
     (void)u_strlcpy(err_msg, e, EAR_ERR_SZ);
 
-  return NULL;
+  if (submods)
+    json_decref(submods);
+
+  return -1;
 }

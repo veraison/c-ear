@@ -1,3 +1,7 @@
+
+// Copyright 2023 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+
 #include "ear.h"
 #include "unity.h"
 
@@ -27,18 +31,30 @@ void test_jwt_verify_valid_ear(void) {
   ear_t *ear;
   const char *valid_ear =
       "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9."
-      "eyJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb2"
-      "4uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsImVhci5zdGF0dXMiOiJh"
-      "ZmZpcm1pbmciLCJlYXRfcHJvZmlsZSI6InRhZzpnaXRodWIuY29tLDIwMj"
-      "I6dmVyYWlzb24vZWFyIiwiaWF0IjoxNjY2MDkxMzczfQ."
-      "w3aDM1g678DzO2EkJ7eJ24UwOXhstqNeYM9axs9dLaDYtO0yPjFXpRr1l0"
-      "6gRsus1jbxc0PF4pr6g_tnmj5yUQ";
+      "eyJlYXIucmF3LWV2aWRlbmNlIjoiTnpRM01qWTVOek0yTlRZek56UUsiLCJlYXIudmVyaWZp"
+      "ZXItaWQiOnsiYnVpbGQiOiJ2dHMgMC4wLjEiLCJkZXZlbG9wZXIiOiJodHRwczovL3ZlcmFp"
+      "c29uLXByb2plY3Qub3JnIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2"
+      "ZXJhaXNvbi9lYXIiLCJpYXQiOjEuNjY2NTI5MTg0ZSswOSwianRpIjoiNTViOGIzZmFkOGRk"
+      "MWQ4ZWFjNGU0OGYxMTdmZTUwOGIxMWY4NDRkOWYwMTg5YmZlZDliODc1MTVhNjc1NDI2NCIs"
+      "Im5iZiI6MTY3NzI0Nzg3OSwic3VibW9kcyI6eyJQQVJTRUNfVFBNIjp7ImVhci5hcHByYWlz"
+      "YWwtcG9saWN5LWlkIjoiaHR0cHM6Ly92ZXJhaXNvbi5leGFtcGxlL3BvbGljeS8xLzYwYTAw"
+      "NjhkIiwiZWFyLnN0YXR1cyI6ImFmZmlybWluZyIsImVhci50cnVzdHdvcnRoaW5lc3MtdmVj"
+      "dG9yIjp7ImV4ZWN1dGFibGVzIjoyLCJoYXJkd2FyZSI6MiwiaW5zdGFuY2UtaWRlbnRpdHki"
+      "OjJ9LCJlYXIudmVyYWlzb24ua2V5LWF0dGVzdGF0aW9uIjp7ImFrcHViIjoiTUZrd0V3WUhL"
+      "b1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFY2pTcDhfTVdNM2d5OFR1Z1dPMVRwUVNqX3ZJ"
+      "a3NMcEMtZzhsNVMzbHBHYjdQV1dHb0NBakVQOF9BNTlWWndMWGd3b1p6TjBXeHVCUGpwYVdp"
+      "V3NmQ1EifX19fQ."
+      "3Ym-f1LEgamxePUM7h6Y2RJDGh9eeL0xKor0n1wE9jdAnLNwm3rTKFV2S2LbqVFoDtK9QGal"
+      "T2t5RnUdfwZNmg";
 
   int ret = ear_jwt_verify(valid_ear, pkey, pkey_sz, "ES256", &ear, NULL);
   TEST_ASSERT(ret == 0);
 
-  const char *status = ear_get_status(ear, NULL);
-  TEST_ASSERT_EQUAL_STRING("affirming", status);
+  ear_tier_t tier;
+
+  ret = ear_get_status(ear, "PARSEC_TPM", &tier, NULL);
+  TEST_ASSERT(ret == 0);
+  TEST_ASSERT_EQUAL_INT(EAR_TIER_AFFIRMING, tier);
 }
 
 int main(void) {
