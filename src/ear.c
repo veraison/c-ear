@@ -161,7 +161,7 @@ int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
   const char *status_s = json_string_value(status);
 
   if (tier_from_string(status_s, ptier) == -1) {
-    (void)snprintf(err_msg, EAR_ERR_SZ, "unknown status \"%s\"", status_s);
+    (void)snprintf(e, sizeof e, "unknown status \"%s\"", status_s);
     goto err;
   }
 
