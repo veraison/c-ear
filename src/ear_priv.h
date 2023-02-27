@@ -15,5 +15,6 @@ typedef struct ear_s {
 } ear_t;
 
 size_t u_strlcpy(char *dst, const char *src, size_t sz);
+int u_b64url_decode(const char *in, uint8_t **pout, size_t *pout_sz);
 
 #endif // !EAR_PRIV_H
