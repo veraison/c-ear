@@ -19,67 +19,110 @@ typedef struct args_s {
 
 // from utils.c
 extern size_t u_strlcpy(char *dst, const char *src, size_t sz);
-const char *to_cstr(const uint8_t *b, size_t b_sz);
+char *to_cstr(const uint8_t *b, size_t b_sz);
 void parse_opts(int ac, char **av, args_t *pargs);
-void read_from_file(const char *fn, uint8_t **pb, size_t *pb_sz);
+int read_from_file(const char *fn, uint8_t **pb, size_t *pb_sz);
 void usage(const char *name);
 
 int main(int argc, char *argv[]) {
   args_t args = {{'\0'}, {'\0'}, {'\0'}};
-  uint8_t *key, *ear_jwt;
+  uint8_t *key = NULL, *ear_jwt = NULL;
   size_t key_sz, ear_jwt_sz;
-  ear_t *ear;
+  ear_t *ear = NULL;
+  char *ear_jwt_cstr = NULL;
   char err_msg[EAR_ERR_SZ];
 
   parse_opts(argc, argv, &args);
 
-  read_from_file(args.key_fn, &key, &key_sz);
-  read_from_file(args.ear_fn, &ear_jwt, &ear_jwt_sz);
-
-  if (ear_jwt_verify(to_cstr(ear_jwt, ear_jwt_sz), key, key_sz, args.alg, &ear,
-                     err_msg) != 0) {
-    err(EXIT_FAILURE, "failed to verify EAR: %s", err_msg);
+  if (read_from_file(args.key_fn, &key, &key_sz) == -1) {
+    warn("error reading key from %s", args.key_fn);
+    goto err;
   }
+
+  if (read_from_file(args.ear_fn, &ear_jwt, &ear_jwt_sz) == -1) {
+    warn("error reading EAR JWT from %s", args.ear_fn);
+    goto err;
+  }
+
+  if ((ear_jwt_cstr = to_cstr(ear_jwt, ear_jwt_sz)) == NULL) {
+    warn("allocating EAR JWT string");
+    goto err;
+  }
+
+  if (ear_jwt_verify(ear_jwt_cstr, key, key_sz, args.alg, &ear, err_msg) != 0) {
+    warnx("failed to verify EAR: %s", err_msg);
+    goto err;
+  }
+
+  free(ear_jwt), ear_jwt = NULL;
+  free(key), key = NULL;
+  free(ear_jwt_cstr), ear_jwt_cstr = NULL;
 
   puts("EAR verified");
 
-  const char *status;
-  if ((status = ear_get_status(ear, err_msg)) == NULL) {
-    err(EXIT_FAILURE, "failed to retrieve EAR status: %s", err_msg);
+  ear_tier_t tier;
+  const char *app_rec = "PARSEC_TPM";
+
+  if (ear_get_status(ear, app_rec, &tier, err_msg) == -1) {
+    warnx("failed to retrieve EAR status for %s appraisal: %s", app_rec,
+          err_msg);
+    goto err;
   }
 
-  puts(status);
+  printf("%s status: tier(%d)\n", app_rec, tier);
+
+  ear_free(ear), ear = NULL;
 
   return 0;
+
+err:
+  if (key)
+    free(key);
+  if (ear_jwt)
+    free(ear_jwt);
+  if (ear_jwt_cstr)
+    free(ear_jwt_cstr);
+  if (ear)
+    ear_free(ear);
+
+  return -1;
 }
 
-void read_from_file(const char *fn, uint8_t **pb, size_t *pb_sz) {
+int read_from_file(const char *fn, uint8_t **pb, size_t *pb_sz) {
   long sz;
-  uint8_t *b;
-  FILE *fp;
+  uint8_t *b = NULL;
+  FILE *fp = NULL;
 
-  if ((fp = fopen(fn, "rb")) == NULL)
-    err(EXIT_FAILURE, "%s", fn);
-
-  if (fseek(fp, 0L, SEEK_END) == -1)
-    err(EXIT_FAILURE, "seeking into %s", fn);
+  if ((fp = fopen(fn, "rb")) == NULL || (fseek(fp, 0L, SEEK_END) == -1)) {
+    goto err;
+  }
 
   /* Get file length. */
   sz = ftell(fp);
   rewind(fp);
 
-  if ((b = malloc(sz)) == NULL)
-    err(EXIT_FAILURE, "getting memory for reading from %s", fn);
+  if ((b = malloc(sz)) == NULL) {
+    goto err;
+  }
 
-  if (fread(b, sz, 1, fp) != 1)
-    err(EXIT_FAILURE, "reading from %s", fn);
+  if (fread(b, sz, 1, fp) != 1) {
+    goto err;
+  }
 
-  (void)fclose(fp);
+  (void)fclose(fp), fp = NULL;
 
   *pb = b;
   *pb_sz = sz;
 
-  return;
+  return 0;
+
+err:
+  if (fp != NULL)
+    (void)fclose(fp);
+  if (b != NULL)
+    free(b);
+
+  return -1;
 }
 
 void usage(const char *name) {
@@ -119,7 +162,7 @@ void parse_opts(int ac, char **av, args_t *pargs) {
   return;
 }
 
-const char *to_cstr(const uint8_t *b, size_t b_sz) {
+char *to_cstr(const uint8_t *b, size_t b_sz) {
   char *s = calloc(1, b_sz + 1);
 
   memcpy(s, b, b_sz);
