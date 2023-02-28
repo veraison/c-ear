@@ -12,6 +12,7 @@
  * implementation details from the caller */
 typedef struct ear_s {
   jwt_t *jwt;
+  json_t *submods;
 } ear_t;
 
 size_t u_strlcpy(char *dst, const char *src, size_t sz);

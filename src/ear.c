@@ -10,9 +10,10 @@
 
 #define EAR_PROFILE "tag:github.com,2023:veraison/ear"
 
-static json_t *get_submods(ear_t *ear, char err_msg[EAR_ERR_SZ]);
+static json_t *cache_submods(ear_t *ear, char err_msg[EAR_ERR_SZ]);
 static int tier_from_string(const char *tier, ear_tier_t *ptier);
 static ear_t *ear_new() { return (ear_t *)calloc(1, sizeof(ear_t)); }
+static int validate_profile(ear_t *ear, char err_msg[EAR_ERR_SZ]);
 
 void ear_free(ear_t *ear) {
   if (ear == NULL)
@@ -20,6 +21,9 @@ void ear_free(ear_t *ear) {
 
   if (ear->jwt != NULL)
     jwt_free(ear->jwt);
+
+  if (ear->submods)
+    json_decref(ear->submods);
 
   free(ear);
 }
@@ -75,15 +79,11 @@ int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
 
   jwt_valid_free(jwt_valid), jwt_valid = NULL;
 
-  const char *eat_profile = jwt_get_grant(ear->jwt, "eat_profile");
-
-  if (eat_profile == NULL) {
-    (void)snprintf(e, sizeof e, "missing mandatory eat_profile");
+  if (validate_profile(ear, err_msg) == -1) {
     goto err;
   }
 
-  if (strcmp(eat_profile, EAR_PROFILE)) {
-    (void)snprintf(e, sizeof e, "unknown eat_profile \"%s\"", eat_profile);
+  if ((ear->submods = cache_submods(ear, err_msg)) == NULL) {
     goto err;
   }
 
@@ -108,17 +108,14 @@ int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
                    char err_msg[EAR_ERR_SZ]) {
   assert(ear != NULL);
   assert(ear->jwt != NULL);
+  assert(ear->submods != NULL);
   assert(app_rec != NULL);
   assert(ptier != NULL);
 
   char e[EAR_ERR_SZ] = {'\0'};
-  json_t *submods = NULL, *submod = NULL, *status = NULL;
+  json_t *submod = NULL, *status = NULL;
 
-  if ((submods = get_submods(ear, e)) == NULL) {
-    goto err;
-  }
-
-  if ((submod = json_object_get(submods, app_rec)) == NULL) {
+  if ((submod = json_object_get(ear->submods, app_rec)) == NULL) {
     (void)snprintf(e, sizeof e, "no appraisal record found for \"%s\"",
                    app_rec);
     goto err;
@@ -137,16 +134,11 @@ int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
     goto err;
   }
 
-  json_decref(submods), submods = NULL;
-
   return 0;
 
 err:
   if (err_msg != NULL)
     (void)u_strlcpy(err_msg, e, EAR_ERR_SZ);
-
-  if (submods)
-    json_decref(submods);
 
   return -1;
 }
@@ -160,14 +152,9 @@ int ear_veraison_get_akpub(ear_t *ear, const char *app_rec, uint8_t **pakpub,
   assert(pakpub_sz != NULL);
 
   char e[EAR_ERR_SZ] = {'\0'};
-  json_t *submods = NULL, *submod = NULL, *key_attestation = NULL,
-         *akpub = NULL;
+  json_t *submod = NULL, *key_attestation = NULL, *akpub = NULL;
 
-  if ((submods = get_submods(ear, e)) == NULL) {
-    goto err;
-  }
-
-  if ((submod = json_object_get(submods, app_rec)) == NULL) {
+  if ((submod = json_object_get(ear->submods, app_rec)) == NULL) {
     (void)snprintf(e, sizeof e, "no appraisal record found for \"%s\"",
                    app_rec);
     goto err;
@@ -192,21 +179,16 @@ int ear_veraison_get_akpub(ear_t *ear, const char *app_rec, uint8_t **pakpub,
     goto err;
   }
 
-  json_decref(submods);
-
   return 0;
 
 err:
-  if (submods)
-    json_decref(submods);
-
   if (err_msg != NULL)
     (void)u_strlcpy(err_msg, e, EAR_ERR_SZ);
 
   return -1;
 }
 
-static json_t *get_submods(ear_t *ear, char err_msg[EAR_ERR_SZ]) {
+static json_t *cache_submods(ear_t *ear, char err_msg[EAR_ERR_SZ]) {
   assert(ear != NULL);
   assert(ear->jwt != NULL);
 
@@ -258,6 +240,29 @@ static int tier_from_string(const char *tier, ear_tier_t *ptier) {
       return 0;
     }
   }
+
+  return -1;
+}
+
+static int validate_profile(ear_t *ear, char err_msg[EAR_ERR_SZ]) {
+  char e[EAR_ERR_SZ] = {'\0'};
+
+  const char *eat_profile = jwt_get_grant(ear->jwt, "eat_profile");
+
+  if (eat_profile == NULL) {
+    (void)snprintf(e, sizeof e, "missing mandatory eat_profile");
+    goto err;
+  }
+
+  if (strcmp(eat_profile, EAR_PROFILE)) {
+    (void)snprintf(e, sizeof e, "unknown eat_profile \"%s\"", eat_profile);
+    goto err;
+  }
+
+  return 0;
+err:
+  if (err_msg != NULL)
+    (void)u_strlcpy(err_msg, e, EAR_ERR_SZ);
 
   return -1;
 }
