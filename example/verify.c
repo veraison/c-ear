@@ -15,17 +15,18 @@ typedef struct args_s {
   char key_fn[1024];
   char alg[16];
   char ear_fn[1024];
+  char app_rec[128];
 } args_t;
 
-// from utils.c
-extern size_t u_strlcpy(char *dst, const char *src, size_t sz);
 char *to_cstr(const uint8_t *b, size_t b_sz);
 void parse_opts(int ac, char **av, args_t *pargs);
 int read_from_file(const char *fn, uint8_t **pb, size_t *pb_sz);
 void usage(const char *name);
+// from utils.c
+extern size_t u_strlcpy(char *dst, const char *src, size_t sz);
 
 int main(int argc, char *argv[]) {
-  args_t args = {{'\0'}, {'\0'}, {'\0'}};
+  args_t args = {{'\0'}, {'\0'}, {'\0'}, {'\0'}};
   uint8_t *key = NULL, *ear_jwt = NULL;
   size_t key_sz, ear_jwt_sz;
   ear_t *ear = NULL;
@@ -61,15 +62,13 @@ int main(int argc, char *argv[]) {
   puts("EAR verified");
 
   ear_tier_t tier;
-  const char *app_rec = "PARSEC_TPM";
-
-  if (ear_get_status(ear, app_rec, &tier, err_msg) == -1) {
-    warnx("failed to retrieve EAR status for %s appraisal: %s", app_rec,
+  if (ear_get_status(ear, args.app_rec, &tier, err_msg) == -1) {
+    warnx("failed to retrieve EAR status for %s appraisal: %s", args.app_rec,
           err_msg);
     goto err;
   }
 
-  printf("%s status: tier(%d)\n", app_rec, tier);
+  printf("%s status: tier(%d)\n", args.app_rec, tier);
 
   ear_free(ear), ear = NULL;
 
@@ -130,7 +129,8 @@ void usage(const char *name) {
       "\nUsage: %s [opts] <ear_jwt>\n\n"
       "    where \'ear_jwt\' is a EAR in JWT format, and \'opts\' is:\n\n"
       "  -k KEY  The key to use for verification\n"
-      "  -a ALG  The algorithm to use for verification\n";
+      "  -a ALG  The algorithm to use for verification\n"
+      "  -s APP  The appraisal record to check\n";
 
   (void)fprintf(stderr, fmt, name);
 
@@ -140,13 +140,16 @@ void usage(const char *name) {
 void parse_opts(int ac, char **av, args_t *pargs) {
   int c;
 
-  while ((c = getopt(ac, av, "a:k:")) != -1) {
+  while ((c = getopt(ac, av, "a:k:s:")) != -1) {
     switch (c) {
+    case 'a':
+      u_strlcpy(pargs->alg, optarg, sizeof pargs->alg);
+      break;
     case 'k':
       u_strlcpy(pargs->key_fn, optarg, sizeof pargs->key_fn);
       break;
-    case 'a':
-      u_strlcpy(pargs->alg, optarg, sizeof pargs->alg);
+    case 's':
+      u_strlcpy(pargs->app_rec, optarg, sizeof pargs->app_rec);
       break;
     default:
       usage(av[0]);

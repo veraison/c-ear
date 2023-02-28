@@ -79,6 +79,33 @@ int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
                    char err_msg[EAR_ERR_SZ]);
 
 /**
+ * @brief Return the attested public key from the the specified appraisal record
+ *
+ * Return the attested public key from the Veraison key attestation extension
+ * claims.  The key buffer must be free'd by the caller.
+ *
+ * @param[in]   ear       an ear_t object returned from a successful invocation
+ *                        of ear_jwt_verify
+ * @param[in]   app_rec   the submod name for the appraisal record
+ * @param[out]  pakpub    Pointer to a byte buffer which, on success, is
+ *                        populated with the attested public key.
+ *                        The buffer is owned by the caller who needs to take
+ *                        care of its disposal
+ * @param[out]  pakpub_sz Pointer to a size_t object that, on success, will be
+ *                        assigned the length in bytes of the key
+ * @param[out]  err_msg   pointer to a pre-allocated buffer (of at least @c
+ *                        EAR_ERR_SZ bytes) which, on failure, will be filled in
+ *                        by the callee with a human readable error message.
+ *                        This can be set to NULL if no extra error reporting is
+ *                        required
+ *
+ * @retval  0   on success
+ * @retval  -1  on failure
+ */
+int ear_veraison_get_akpub(ear_t *ear, const char *app_rec, uint8_t **pakpub,
+                           size_t *pakpub_sz, char err_msg[EAR_ERR_SZ]);
+
+/**
  * @brief Free an ear_t object allocated by ear_jwt_verify
  *
  * @param ear the ear_t object to free
