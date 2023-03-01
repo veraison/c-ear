@@ -39,8 +39,9 @@ typedef enum {
  * @param[in]   alg     NUL-terminated C string with the JWT algorithm to use
  *                      for verifying the EAR (e.g., "ES256", "RS256")
  * @param[out]  pear    Pointer to a ear_t object which, on success, will be
- *                      populated with the EAR claims-set.  This needs to be
- *                      allocated by the caller
+ *                      populated with the EAR claims-set.
+ *                      The object is owned by the caller who needs to take
+ *                      care of its disposal using ear_free()
  * @param[out]  err_msg pointer to a pre-allocated buffer (of at least
  *                      @c EAR_ERR_SZ bytes) which, on failure, will be filled
  *                      in by the callee with a human readable error message.
@@ -90,7 +91,7 @@ int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
  * @param[out]  pakpub    Pointer to a byte buffer which, on success, is
  *                        populated with the attested public key.
  *                        The buffer is owned by the caller who needs to take
- *                        care of its disposal
+ *                        care of its disposal using free()
  * @param[out]  pakpub_sz Pointer to a size_t object that, on success, will be
  *                        assigned the length in bytes of the key
  * @param[out]  err_msg   pointer to a pre-allocated buffer (of at least @c
