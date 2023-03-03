@@ -21,8 +21,6 @@ brew install openssl
 
 #### Ubuntu
 
-> NOTE: not fully tested yet
-
 ```bash
 sudo apt-get -y install cmake
 ```
