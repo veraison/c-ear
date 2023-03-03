@@ -54,7 +54,7 @@ On MacOSX only:
 export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
 ```
 
-The following does an out-of-source build in the `_build` folder, run the unit tests and installs in the usual platform default location.
+The following does an out-of-source build in the `_build` folder, runs the unit tests and installs in the usual platform default location.
 
 ```bash
 cmake -B_build
