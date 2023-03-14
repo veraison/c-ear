@@ -21,7 +21,7 @@ target_compile_options(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME}
     PROPERTIES
-    C_STANDARD 17
-    C_STANDARD_REQUIRED ON
+    C_STANDARD 11
+    C_STANDARD_REQUIRED OFF
     C_EXTENSIONS OFF
 )
