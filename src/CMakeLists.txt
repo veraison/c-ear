@@ -7,6 +7,7 @@ set_target_properties(ear PROPERTIES PUBLIC_HEADER "ear.h")
 
 install(TARGETS ear
     LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
     PUBLIC_HEADER DESTINATION include
 )
 
