@@ -99,6 +99,23 @@ void test_veraison_get_akpub(void) {
   ear_free(ear);
 }
 
+void test_get_app_recs(void) {
+  ear_t *ear;
+  const char **app_rec_list;
+  size_t app_rec_count;
+  int ret = ear_jwt_verify(valid_ear, pkey, pkey_sz, "ES256", &ear, NULL);
+  TEST_ASSERT(ret == 0);
+
+  ret = ear_get_app_recs(ear, &app_rec_list, &app_rec_count);
+  TEST_ASSERT(ret == 0);
+  TEST_ASSERT_NOT_NULL(app_rec_list);
+  TEST_ASSERT_EQUAL_size_t(1, app_rec_count);
+  TEST_ASSERT_EQUAL_STRING("PARSEC_TPM", app_rec_list[0]);
+
+  free(app_rec_list);
+  ear_free(ear);
+}
+
 // Output goes to ${BUILD_DIR}/Testing/Temporary/LastTest.log
 static void DBG_print_buf(const uint8_t *b, size_t b_sz) {
   (void)printf("%p[%zu]:\n", b, b_sz);
@@ -180,6 +197,7 @@ int main(void) {
   RUN_TEST(test_jwt_verify_valid_ear);
   RUN_TEST(test_get_status_affirming);
   RUN_TEST(test_veraison_get_akpub);
+  RUN_TEST(test_get_app_recs);
   RUN_TEST(test_b64);
   return UNITY_END();
 }

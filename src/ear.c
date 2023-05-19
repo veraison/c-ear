@@ -104,6 +104,36 @@ err:
   return -1;
 }
 
+int ear_get_app_recs(ear_t *ear, const char ***papp_rec, size_t *papp_rec_sz) {
+  assert(ear != NULL);
+  assert(ear->jwt != NULL);
+  assert(ear->submods != NULL);
+  assert(papp_rec != NULL);
+  assert(papp_rec_sz != NULL);
+
+  const char *key;
+  json_t *value;
+  size_t app_rec_count = 0, i = 0;
+  const char **keylist = NULL;
+
+  // Preliminary loop to count the number of records
+  json_object_foreach(ear->submods, key, value) {
+    app_rec_count++;
+  }
+
+  // Allocate suitable buffer space
+  keylist = calloc(app_rec_count, sizeof(char*));
+
+  // Second pass to populate the list with the keys, which are interior pointers
+  json_object_foreach(ear->submods, key, value) {
+    keylist[i++] = key;
+  }
+
+  *papp_rec_sz = app_rec_count;
+  *papp_rec = keylist;
+  return 0;
+}
+
 int ear_get_status(ear_t *ear, const char *app_rec, ear_tier_t *ptier,
                    char err_msg[EAR_ERR_SZ]) {
   assert(ear != NULL);

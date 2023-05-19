@@ -55,6 +55,33 @@ int ear_jwt_verify(const char *ear_jwt, const uint8_t *pkey, size_t pkey_sz,
                    const char *alg, ear_t **pear, char err_msg[EAR_ERR_SZ]);
 
 /**
+ * @brief Output a list of all of the appraisal records in the given EAR.
+ *
+ * This function can be used to obtain the names of the appraisal records in
+ * advance of querying the status or properties of any individual record in
+ * the given EAR.
+ *
+ * The data is returned as an array of NUL-terminated strings, along with the
+ * size of the array (which is the number of appraisal records).
+ *
+ * @param[in]   ear         an ear_t object returned from a successful invocation of
+ *                          ear_jwt_verify
+ * @param[out]  papp_rec    Upon successful return, receives a freshly-allocated
+ *                          array of pointers to constant strings. The caller takes
+ *                          ownership of this array, and is responsible for
+ *                          releasing it with free() when no longer needed. Each
+ *                          member of the array is a constant char* pointer to a
+ *                          NUL-terminated string giving the name of the appraisal
+ *                          record. These individual pointers remain owned by the
+ *                          library and must not be mutated or freed by the caller.
+ * @param[out]  papp_rec_sz Upon successful return, receives the number of entries
+ *                          in the appraisal record array. 
+ * @retval  0   on success
+ * @retval  -1  on failure
+ */
+int ear_get_app_recs(ear_t *ear, const char ***papp_rec, size_t *papp_rec_sz);
+
+/**
  * @brief Return the "ear.status" value of the specified appraisal record
  *
  * On success, the "ear.status" value of the specified appraisal record is
